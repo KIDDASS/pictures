@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub File Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            width: 90%;
+            max-width: 900px;
+            min-height: 600px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Login Page Styles */
+        .login-page {
+            padding: 60px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 600px;
+        }
+
+        .login-page h1 {
+            color: #ffffff;
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .login-page p {
+            color: #a1a1aa;
+            margin-bottom: 50px;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #e4e4e7;
+            font-weight: 500;
+            font-size: 14px;
+            letter-spacing: 0.01em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-family: inherit;
+        }
+
+        .form-group input::placeholder {
+            color: #71717a;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ffffff 0%, #f4f4f5 100%);
+            color: #000000;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+            font-family: inherit;
+            letter-spacing: 0.01em;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            display: none;
+            padding: 40px;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-info h2 {
+            color: #ffffff;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+
+        .user-info p {
+            color: #a1a1aa;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            width: auto;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Configuration Panel */
+        .config-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .config-panel h3 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .config-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 0;
+        }
+
+        .config-item label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #e4e4e7;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .config-item input {
+            padding: 12px 14px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            color: #ffffff;
+            border-radius: 8px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .config-item input:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+        }
+
+        .config-item input::placeholder {
+            color: #71717a;
+        }
+
+        /* Drag and Drop Area */
+        .drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 60px 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 32px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+
+        .drop-zone:hover::before {
+            animation: shimmer 2s ease-in-out infinite;
+            opacity: 1;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .drop-zone.drag-over {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.02);
+        }
+
+        .drop-zone-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .drop-zone h3 {
+            color: #ffffff;
+            font-size: 1.6rem;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .drop-zone p {
+            color: #a1a1aa;
+            margin-bottom: 24px;
+            font-size: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .browse-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 14px 28px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .browse-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        /* File List */
+        .file-list {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            transform: translateX(4px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #a1a1aa;
+        }
+
+        .file-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: rgba(255, 255, 255, 0.1);
+            color: #d4d4d8;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-uploading {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                margin: 20px;
+            }
+
+            .login-page {
+                padding: 40px 30px;
+            }
+
+            .login-page h1 {
+                font-size: 2.2rem;
+            }
+
+            .dashboard {
+                padding: 24px;
+            }
+
+            .drop-zone {
+                padding: 40px 16px;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .config-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.1);
+            color: #86efac;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .file-list p {
+            text-align: center;
+            color: #71717a;
+            font-style: italic;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Page -->
+        <div id="loginPage" class="login-page">
+            <h1>GitHub File Manager</h1>
+            <p>Connect your GitHub account to start uploading files</p>
+            
+            <div id="errorContainer"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="githubToken">GitHub Personal Access Token</label>
+                    <input type="password" id="githubToken" name="githubToken" placeholder="ghp_xxxxxxxxxxxx" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="repoName">Repository Name</label>
+                    <input type="text" id="repoName" name="repoName" placeholder="username/repository-name" required>
+                </div>
+                
+                <button type="submit" class="btn">Connect to GitHub</button>
+            </form>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="dashboard">
+            <div class="dashboard-header">
+                <div class="user-info">
+                    <h2 id="userName">Dashboard</h2>
+                    <p id="repoInfo">Connected to repository</p>
+                </div>
+                <button id="logoutBtn" class="btn logout-btn">Logout</button>
+            </div>
+
+            <!-- Configuration Panel -->
+            <div class="config-panel">
+                <h3>Upload Settings</h3>
+                <div class="config-row">
+                    <div class="config-item">
+                        <label for="uploadPath">Upload Folder</label>
+                        <input type="text" id="uploadPath" placeholder="images/" value="">
+                    </div>
+                    <div class="config-item">
+                        <label for="commitMessage">Commit Message</label>
+                        <input type="text" id="commitMessage" placeholder="Upload images" value="Upload images">
+                    </div>
+                </div>
+            </div>
+
+            <div id="messageContainer"></div>
+
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-content">
+                    <h3>🚀 Drop your files here</h3>
+                    <p>or click to browse</p>
+                    <label for="fileInput" class="browse-btn">Choose Files</label>
+                </div>
+                <input type="file" id="fileInput" class="file-input" multiple>
+            </div>
+
+            <div class="file-list" id="fileList">
+                <p>No files selected</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class GitHubFileManager {
+            constructor() {
+                this.token = null;
+                this.repo = null;
+                this.owner = null;
+                this.files = [];
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.checkExistingSession();
+            }
+
+            bindEvents() {
+                const loginForm = document.getElementById('loginForm');
+                const logoutBtn = document.getElementById('logoutBtn');
+                const dropZone = document.getElementById('dropZone');
+                const fileInput = document.getElementById('fileInput');
+
+                loginForm.addEventListener('submit', this.handleLogin.bind(this));
+                logoutBtn.addEventListener('click', this.handleLogout.bind(this));
+                
+                dropZone.addEventListener('click', () => fileInput.click());
+                dropZone.addEventListener('dragover', this.handleDragOver.bind(this));
+                dropZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                dropZone.addEventListener('drop', this.handleDrop.bind(this));
+                
+                fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+            }
+
+            checkExistingSession() {
+                // Check if we have saved credentials
+                const savedToken = sessionStorage.getItem('github_token');
+                const savedRepo = sessionStorage.getItem('github_repo');
+                
+                if (savedToken && savedRepo) {
+                    this.token = savedToken;
+                    const [owner, repo] = savedRepo.split('/');
+                    this.owner = owner;
+                    this.repo = repo;
+                    this.showDashboard();
+                }
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const token = formData.get('githubToken');
+                const repoName = formData.get('repoName');
+                
+                this.showLoading(true);
+                
+                try {
+                    await this.validateGitHubCredentials(token, repoName);
+                    this.token = token;
+                    const [owner, repo] = repoName.split('/');
+                    this.owner = owner;
+                    this.repo = repo;
+                    
+                    // Save credentials in session storage
+                    sessionStorage.setItem('github_token', token);
+                    sessionStorage.setItem('github_repo', repoName);
+                    
+                    this.showDashboard();
+                    this.showMessage('Successfully connected to GitHub!', 'success');
+                } catch (error) {
+                    this.showError(error.message);
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            async validateGitHubCredentials(token, repoName) {
+                if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+                    throw new Error('Invalid GitHub token format');
+                }
+                
+                if (!repoName.includes('/')) {
+                    throw new Error('Repository name must be in format "owner/repo"');
+                }
+
+                // Actually validate with GitHub API
+                try {
+                    const response = await fetch(`https://api.github.com/repos/${repoName}`, {
+                        headers: { 
+                            'Authorization': `token ${token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('Repository not found or no access');
+                        } else if (response.status === 401) {
+                            throw new Error('Invalid GitHub token');
+                        } else {
+                            throw new Error(`GitHub API error: ${response.statusText}`);
+                        }
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    if (error.message.includes('fetch')) {
+                        throw new Error('Cannot connect to GitHub. Check your internet connection.');
+                    }
+                    throw error;
+                }
+            }
+
+            handleLogout() {
+                this.token = null;
+                this.repo = null;
+                this.owner = null;
+                this.files = [];
+                
+                // Clear saved credentials
+                sessionStorage.removeItem('github_token');
+                sessionStorage.removeItem('github_repo');
+                
+                this.showLoginPage();
+            }
+
+            showLoginPage() {
+                document.getElementById('loginPage').style.display = 'flex';
+                document.getElementById('dashboard').classList.remove('active');
+                document.getElementById('loginForm').reset();
+                this.clearMessages();
+            }
+
+            showDashboard() {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                document.getElementById('userName').textContent = 'Dashboard';
+                document.getElementById('repoInfo').textContent = `${this.owner}/${this.repo}`;
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                document.getElementById('dropZone').classList.add('drag-over');
+            }
+
+            handleDragLeave() {
+                document.getElementById('dropZone').classList.remove('drag-over');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                document.getElementById('dropZone').classList.remove('drag-over');
+                const files = Array.from(e.dataTransfer.files);
+                this.processFiles(files);
+            }
+
+            handleFileSelect(e) {
+                const files = Array.from(e.target.files);
+                this.processFiles(files);
+            }
+
+            processFiles(files) {
+                files.forEach(file => {
+                    const fileData = {
+                        id: Date.now() + Math.random(),
+                        file: file,
+                        name: file.name,
+                        size: file.size,
+                        status: 'pending'
+                    };
+                    
+                    this.files.push(fileData);
+                    this.addFileToList(fileData);
+                    this.uploadFile(fileData);
+                });
+            }
+
+            addFileToList(fileData) {
+                const fileList = document.getElementById('fileList');
+                
+                if (fileList.innerHTML.includes('No files selected')) {
+                    fileList.innerHTML = '';
+                }
+
+                const fileElement = document.createElement('div');
+                fileElement.className = 'file-item';
+                fileElement.id = `file-${fileData.id}`;
+                fileElement.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-name">${fileData.name}</div>
+                        <div class="file-size">${this.formatFileSize(fileData.size)}</div>
+                    </div>
+                    <div class="file-status status-${fileData.status}">${this.getStatusText(fileData.status)}</div>
+                `;
+                
+                fileList.appendChild(fileElement);
+            }
+
+            async uploadFile(fileData) {
+                try {
+                    this.updateFileStatus(fileData.id, 'uploading');
+                    
+                    // Actually upload to GitHub
+                    await this.uploadToGitHub(fileData.file);
+                    
+                    this.updateFileStatus(fileData.id, 'success');
+                    this.showMessage(`Successfully uploaded ${fileData.name}`, 'success');
+                    
+                    // Notify gallery of new image
+                    this.notifyGallery(fileData.name);
+                    
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    this.updateFileStatus(fileData.id, 'error');
+                    this.showMessage(`Failed to upload ${fileData.name}: ${error.message}`, 'error');
+                }
+            }
+
+            async uploadToGitHub(file) {
+                const uploadPath = document.getElementById('uploadPath').value.trim();
+                const commitMessage = document.getElementById('commitMessage').value.trim() || `Upload ${file.name}`;
+                
+                // Create the file path
+                const filePath = uploadPath ? `${uploadPath}/${file.name}` : file.name;
+                
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = async () => {
+                        try {
+                            // Convert file to base64
+                            const content = btoa(reader.result);
+                            
+                            // Check if file already exists
+                            let sha = null;
+                            try {
+                                const existingResponse = await fetch(
+                                    `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${filePath}`, 
+                                    {
+                                        headers: {
+                                            'Authorization': `token ${this.token}`,
+                                            'Accept': 'application/vnd.github.v3+json'
+                                        }
+                                    }
+                                );
+                                
+                                if (existingResponse.ok) {
+                                    const existingData = await existingResponse.json();
+                                    sha = existingData.sha; // Get SHA for updating existing file
+                                }
+                            } catch (e) {
+                                // File doesn't exist, which is fine
+                            }
+                            
+                            // Upload or update file
+                            const uploadData = {
+                                message: commitMessage,
+                                content: content,
+                                branch: 'main' // or 'master' depending on your repo
+                            };
+                            
+                            if (sha) {
+                                uploadData.sha = sha; // Include SHA when updating existing file
+                            }
+                            
+                            const response = await fetch(
+                                `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${filePath}`, 
+                                {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Authorization': `token ${this.token}`,
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/vnd.github.v3+json'
+                                    },
+                                    body: JSON.stringify(uploadData)
+                                }
+                            );
+                            
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.message || `Upload failed: ${response.statusText}`);
+                            }
+                            
+                            resolve(await response.json());
+                            
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    
+                    reader.onerror = () => reject(new Error('Failed to read file'));
+                    reader.readAsBinaryString(file);
+                });
+            }
+
+            updateFileStatus(fileId, status) {
+                const fileElement = document.getElementById(`file-${fileId}`);
+                if (fileElement) {
+                    const statusElement = fileElement.querySelector('.file-status');
+                    statusElement.className = `file-status status-${status}`;
+                    statusElement.textContent = this.getStatusText(status);
+                }
+                
+                const fileData = this.files.find(f => f.id === fileId);
+                if (fileData) {
+                    fileData.status = status;
+                }
+            }
+
+            getStatusText(status) {
+                const statusTexts = {
+                    pending: 'Pending',
+                    uploading: 'Uploading...',
+                    success: 'Uploaded',
+                    error: 'Failed'
+                };
+                return statusTexts[status] || status;
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            showMessage(message, type) {
+                const container = document.getElementById('messageContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `${type}-message`;
+                messageDiv.textContent = message;
+                container.appendChild(messageDiv);
+                
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 5000);
+            }
+
+            showError(message) {
+                const container = document.getElementById('errorContainer');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                container.appendChild(errorDiv);
+                
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 5000);
+            }
+
+            clearMessages() {
+                document.getElementById('errorContainer').innerHTML = '';
+                document.getElementById('messageContainer').innerHTML = '';
+            }
+
+            showLoading(show) {
+                const container = document.querySelector('.container');
+                if (show) {
+                    container.classList.add('loading');
+                } else {
+                    container.classList.remove('loading');
+                }
+            }
+
+            notifyGallery(imageName) {
+                // Method 1: Custom event for same-page integration
+                const event = new CustomEvent('newImageUploaded', {
+                    detail: { imageName: imageName, timestamp: Date.now() }
+                });
+                window.dispatchEvent(event);
+                
+                // Method 2: Session storage for cross-page communication
+                try {
+                    sessionStorage.setItem('newImageUploaded', JSON.stringify({
+                        name: imageName,
+                        timestamp: Date.now()
+                    }));
+                } catch (e) {
+                    console.log('Could not notify gallery:', e);
+                }
+                
+                // Method 3: Direct function call if gallery is on same page
+                if (typeof window.notifyNewImage === 'function') {
+                    window.notifyNewImage(imageName);
+                }
+                
+                console.log(`🎉 Uploaded: ${imageName} - Gallery will auto-refresh soon!`);
+            }
+        }
+
+        // Initialize the application
+        new GitHubFileManager();
+    </script>
+</body>
+</html>
